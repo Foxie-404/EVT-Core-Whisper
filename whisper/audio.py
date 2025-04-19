@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from functools import lru_cache
 from typing import Union
 
-from .Utils import exact_div
+from .utils import exact_div
 
 
 # hard-coded audio hyperparameters

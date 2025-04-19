@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import Dict
 from typing import Iterable, Optional
 
-from .Transcribe import transcribe as transcribe_function
-from .Decoding import detect_language as detect_language_function, decode as decode_function
+from .transcribe import transcribe as transcribe_function
+from .decoding import detect_language as detect_language_function, decode as decode_function
 
 
 @dataclass

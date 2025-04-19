@@ -15,9 +15,9 @@ current_dir = Path(__file__).absolute().parent.as_posix()
 sys.path.insert(0, f"{current_dir}")
 os.chdir(current_dir)
 
-from whisper.Transcribe import transcribe
-from whisper.Utils import optional_int, optional_float, str2bool, get_writer
-from whisper.Model import ModelDimensions, Whisper
+from whisper.transcribe import transcribe
+from whisper.utils import optional_int, optional_float, str2bool, get_writer
+from whisper.model import ModelDimensions, Whisper
 
 
 _MODELS = {
@@ -165,7 +165,7 @@ class Voice_Transcribing:
         self.No_Speech_Threshold: optional_float = 0.6 # if the probability of the <|nospeech|> token is higher than this value AND the decoding has failed due to `logprob_threshold`, consider the segment as silence
         self.Threads: optional_int = 0 # number of threads used by torch for CPU inference; supercedes MKL_NUM_THREADS/OMP_NUM_THREADS
     
-    def Transcriber(self):
+    def transcriber(self):
         os.makedirs(self.Audio_Dir, exist_ok = True)
         os.makedirs(self.SRT_Dir, exist_ok = True)
 

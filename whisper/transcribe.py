@@ -4,12 +4,12 @@ import torch
 import tqdm
 from typing import Optional, Tuple, Union, TYPE_CHECKING
 
-from .Audio import SAMPLE_RATE, N_FRAMES, HOP_LENGTH, pad_or_trim, log_mel_spectrogram
-from .Decoding import DecodingOptions, DecodingResult
-from .Tokenizer import LANGUAGES, get_tokenizer
-from .Utils import exact_div, format_timestamp, make_safe
+from .audio import SAMPLE_RATE, N_FRAMES, HOP_LENGTH, pad_or_trim, log_mel_spectrogram
+from .decoding import DecodingOptions, DecodingResult
+from .tokenizer import LANGUAGES, get_tokenizer
+from .utils import exact_div, format_timestamp, make_safe
 if TYPE_CHECKING:
-    from .Model import Whisper
+    from .model import Whisper
 
 
 def transcribe(

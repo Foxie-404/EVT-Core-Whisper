@@ -6,11 +6,11 @@ from torch.distributions import Categorical
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Iterable, Optional, Sequence, Union, TYPE_CHECKING
 
-from .Audio import CHUNK_LENGTH
-from .Tokenizer import Tokenizer, get_tokenizer
-from .Utils import compression_ratio
+from .audio import CHUNK_LENGTH
+from .tokenizer import Tokenizer, get_tokenizer
+from .utils import compression_ratio
 if TYPE_CHECKING:
-    from .Model import Whisper
+    from .model import Whisper
 
 
 @torch.no_grad()
