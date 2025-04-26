@@ -64,7 +64,7 @@ def _download(url: str, root: str, in_memory: bool) -> Union[bytes, str]:
 
     model_bytes = open(download_target, "rb").read()
     if hashlib.sha256(model_bytes).hexdigest() != expected_sha256:
-        raise RuntimeError("Model has been downloaded but the SHA256 checksum does not not match. Please retry loading the model.")
+        raise RuntimeError("model has been downloaded but the SHA256 checksum does not not match. Please retry loading the model.")
 
     return model_bytes if in_memory else download_target
 
@@ -114,7 +114,7 @@ def load_model(name: str, device: Optional[Union[str, torch.device]] = None, dow
     elif os.path.isfile(name):
         checkpoint_file = open(name, "rb").read() if in_memory else name
     else:
-        raise RuntimeError(f"Model {name} not found; available models = {available_models()}")
+        raise RuntimeError(f"model {name} not found; available models = {available_models()}")
 
     with (io.BytesIO(checkpoint_file) if in_memory else open(checkpoint_file, "rb")) as fp:
         checkpoint = torch.load(fp, map_location=device)
@@ -132,24 +132,24 @@ class Voice_Transcribing:
     Transcribe WAV files to text and save as SRT files
     '''
     def __init__(self,
-        Model_Path: str = './Models/.pt',
-        Audio_Dir: str = './WAV_Files',
-        Verbose: str2bool = True,
-        Add_LanguageInfo: bool = True,
-        Condition_on_Previous_Text: str2bool = False,
+        modelPath: str = './Models/.pt',
+        audioDir: str = './WAV_Files',
+        verbose: str2bool = True,
+        addLanguageInfo: bool = True,
+        conditionOnPreviousText: str2bool = False,
         fp16: str2bool = True,
         Output_Root: str = './',
-        Output_Name: str = 'SRT_Files'
+        outputDirName: str = 'SRT_Files'
     ):
-        self.Model_Name = Path(Model_Path).stem.__str__() # name of the Whisper model to use    choices = available_models()
-        self.Model_Dir = Path(Model_Path).parent.__str__() # the path to save model files; uses ~/.cache/whisper by default
+        self.Model_Name = Path(modelPath).stem.__str__() # name of the Whisper model to use    choices = available_models()
+        self.Model_Dir = Path(modelPath).parent.__str__() # the path to save model files; uses ~/.cache/whisper by default
         self.Device: str = "cuda" if torch.cuda.is_available() else "cpu" # device to use for PyTorch inference
-        self.Audio_Dir = Audio_Dir # the path to save audio files
-        self.SRT_Dir = Path(Output_Root).joinpath(Output_Name).as_posix() # help = "directory to save the outputs
-        self.Verbose = Verbose # whether to print out the progress and debug messages
+        self.audioDir = audioDir # the path to save audio files
+        self.SRT_Dir = Path(Output_Root).joinpath(outputDirName).as_posix() # help = "directory to save the outputs
+        self.verbose = verbose # whether to print out the progress and debug messages
         self.Task = 'transcribe' # whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')
         self.Language = None # language spoken in the audio, specify None to perform language detection
-        self.Add_LanguageInfo = Add_LanguageInfo # add language info to the transcription
+        self.addLanguageInfo = addLanguageInfo # add language info to the transcription
         self.Temperature: float = 0 # temperature to use for sampling
         self.Best_of: optional_int = 5 # number of candidates when sampling with non-zero temperature
         self.Beam_Size: optional_int = 5 # number of beams in beam search, only applicable when temperature is zero
@@ -157,16 +157,16 @@ class Voice_Transcribing:
         self.Length_Penalty: float = None # optional token length penalty coefficient (alpha) as in https://arxiv.org/abs/1609.08144, uses simple length normalization by default
         self.Initial_Prompt: str = None # optional text to provide as a prompt for the first window
         self.Suppress_Tokens: str = "-1" # comma-separated list of token ids to suppress during sampling; '-1' will suppress most special characters except common punctuations
-        self.Condition_on_Previous_Text = Condition_on_Previous_Text # if True, provide the previous output of the model as a prompt for the next window; disabling may make the text inconsistent across windows, but the model becomes less prone to getting stuck in a failure loop
+        self.conditionOnPreviousText = conditionOnPreviousText # if True, provide the previous output of the model as a prompt for the next window; disabling may make the text inconsistent across windows, but the model becomes less prone to getting stuck in a failure loop
         self.fp16 = fp16 # whether to perform inference in fp16; True by default
         self.Temperature_Increment_on_Fallback: optional_float = 0.2 # temperature to increase when falling back when the decoding fails to meet either of the thresholds below
-        self.Compression_Ratio_Threshold: optional_float = 2.4 # if the gzip compression ratio is higher than this value, treat the decoding as failed
-        self.Logprob_Threshold: optional_float = -1.0 # if the average log probability is lower than this value, treat the decoding as failed
-        self.No_Speech_Threshold: optional_float = 0.6 # if the probability of the <|nospeech|> token is higher than this value AND the decoding has failed due to `logprob_threshold`, consider the segment as silence
+        self.compressionRatioThreshold: optional_float = 2.4 # if the gzip compression ratio is higher than this value, treat the decoding as failed
+        self.logprobThreshold: optional_float = -1.0 # if the average log probability is lower than this value, treat the decoding as failed
+        self.noSpeechThreshold: optional_float = 0.6 # if the probability of the <|nospeech|> token is higher than this value AND the decoding has failed due to `logprob_threshold`, consider the segment as silence
         self.Threads: optional_int = 0 # number of threads used by torch for CPU inference; supercedes MKL_NUM_THREADS/OMP_NUM_THREADS
     
-    def transcriber(self):
-        os.makedirs(self.Audio_Dir, exist_ok = True)
+    def transcribe(self):
+        os.makedirs(self.audioDir, exist_ok = True)
         os.makedirs(self.SRT_Dir, exist_ok = True)
 
         if self.Model_Name.endswith(".en") and self.Language not in {"en", "English"}:
@@ -182,7 +182,7 @@ class Voice_Transcribing:
         if (threads := self.Threads) > 0:
             torch.set_num_threads(threads)
 
-        Model = load_model(
+        model = load_model(
             name = self.Model_Name,
             device = self.Device,
             download_root = self.Model_Dir
@@ -190,47 +190,47 @@ class Voice_Transcribing:
 
         # Filter out the audio files and get their paths
         PathList = []
-        for Dir_Path, Folder_Names, File_Names in os.walk(self.Audio_Dir):
+        for Dir_Path, Folder_Names, File_Names in os.walk(self.audioDir):
             for Index, File_Name in enumerate(File_Names):
                 for extension in ['.flac', '.wav', '.mp3', '.aac', '.m4a', '.wma', '.aiff', '.au', '.ogg']:
                     if File_Name.endswith(extension):
                         File_Path = Path(Dir_Path).joinpath(File_Name).as_posix()
                         PathList.append(File_Path)
 
-        Writer = get_writer("srt", self.SRT_Dir)
+        writer = get_writer("srt", self.SRT_Dir)
 
-        for Audio_Path in PathList:
+        for audioPath in PathList:
             try:
-                Writer(
+                writer(
                     transcribe(
-                        model = Model,
-                        audio = Audio_Path,
-                        verbose = self.Verbose,
+                        model = model,
+                        audio = audioPath,
+                        verbose = self.verbose,
                         temperature = Temperature,
-                        compression_ratio_threshold = self.Compression_Ratio_Threshold,
-                        logprob_threshold = self.Logprob_Threshold,
-                        no_speech_threshold = self.No_Speech_Threshold,
-                        condition_on_previous_text = self.Condition_on_Previous_Text,
+                        compression_ratio_threshold = self.compressionRatioThreshold,
+                        logprob_threshold = self.logprobThreshold,
+                        no_speech_threshold = self.noSpeechThreshold,
+                        condition_on_previous_text = self.conditionOnPreviousText,
                         initial_prompt = self.Initial_Prompt,
                         #decode_options = {"language": self.Language}
                     ),
-                    Audio_Path,
-                    self.Add_LanguageInfo
+                    audioPath,
+                    self.addLanguageInfo
                 )
             except: # To avoid encountering the ValueError (https://github.com/openai/whisper/discussions/1068)
-                Writer(
+                writer(
                     transcribe(
-                        model = Model,
-                        audio = Audio_Path,
-                        verbose = self.Verbose,
+                        model = model,
+                        audio = audioPath,
+                        verbose = self.verbose,
                         temperature = [self.Temperature], # This means setting 'Temperature_Increment_on_Fallback' to None
-                        compression_ratio_threshold = self.Compression_Ratio_Threshold,
-                        logprob_threshold = self.Logprob_Threshold,
-                        no_speech_threshold = self.No_Speech_Threshold,
-                        condition_on_previous_text = self.Condition_on_Previous_Text,
+                        compression_ratio_threshold = self.compressionRatioThreshold,
+                        logprob_threshold = self.logprobThreshold,
+                        no_speech_threshold = self.noSpeechThreshold,
+                        condition_on_previous_text = self.conditionOnPreviousText,
                         initial_prompt = self.Initial_Prompt,
                         #decode_options = {"language": self.Language}
                     ),
-                    Audio_Path,
-                    self.Add_LanguageInfo
+                    audioPath,
+                    self.addLanguageInfo
                 )
