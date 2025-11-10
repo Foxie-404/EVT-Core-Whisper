@@ -135,6 +135,7 @@ class Voice_Transcribing:
         modelPath: str = './Models/.pt',
         audioDir: str = './WAV_Files',
         verbose: str2bool = True,
+        language: str = None,
         addLanguageInfo: bool = True,
         conditionOnPreviousText: str2bool = False,
         fp16: str2bool = True,
@@ -148,7 +149,7 @@ class Voice_Transcribing:
         self.SRT_Dir = Path(outputRoot).joinpath(outputDirName).as_posix() # help = "directory to save the outputs
         self.verbose = verbose # whether to print out the progress and debug messages
         self.Task = 'transcribe' # whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')
-        self.Language = None # language spoken in the audio, specify None to perform language detection
+        self.Language = language # language spoken in the audio, specify None to perform language detection
         self.addLanguageInfo = addLanguageInfo # add language info to the transcription
         self.Temperature: float = 0 # temperature to use for sampling
         self.Best_of: optional_int = 5 # number of candidates when sampling with non-zero temperature
@@ -212,7 +213,7 @@ class Voice_Transcribing:
                         no_speech_threshold = self.noSpeechThreshold,
                         condition_on_previous_text = self.conditionOnPreviousText,
                         initial_prompt = self.Initial_Prompt,
-                        #decode_options = {"language": self.Language}
+                        language = self.Language,
                     ),
                     audioPath,
                     self.addLanguageInfo
@@ -229,7 +230,7 @@ class Voice_Transcribing:
                         no_speech_threshold = self.noSpeechThreshold,
                         condition_on_previous_text = self.conditionOnPreviousText,
                         initial_prompt = self.Initial_Prompt,
-                        #decode_options = {"language": self.Language}
+                        language = self.Language,
                     ),
                     audioPath,
                     self.addLanguageInfo
